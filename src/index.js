@@ -22,28 +22,46 @@ app.use(express.static('public'));
 // Database connection
 connectDB();
 
+// Home Route
+app.get('/', (req, res) => {
+    res.json({
+        success: true,
+        message: 'Backend Running Successfully'
+    });
+});
+
 // Routes
 app.use('/api/auth', authRouter);
 app.use('/api/users', userRouter);
 
 // Health check
 app.get('/api/health', (req, res) => {
-    res.json({ message: 'Server is running', timestamp: new Date().toISOString() });
+    res.json({
+        message: 'Server is running',
+        timestamp: new Date().toISOString()
+    });
 });
 
 // 404 handler
 app.use((req, res) => {
-    res.status(404).json({ error: 'Route not found' });
+    res.status(404).json({
+        error: 'Route not found'
+    });
 });
 
 // Error handler
 app.use((err, req, res, next) => {
     console.error('Error:', err);
-    res.status(500).json({ error: 'Internal server error', message: err.message });
+
+    res.status(500).json({
+        error: 'Internal server error',
+        message: err.message
+    });
 });
 
 // Start server only if not in Vercel environment
 if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+
     const server = app.listen(PORT, () => {
         console.log(`Server is running on port ${PORT}`);
         console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
@@ -52,6 +70,7 @@ if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
     // Handle shutdown gracefully
     process.on('SIGTERM', () => {
         console.log('SIGTERM received, shutting down gracefully');
+
         server.close(() => {
             console.log('Server closed');
             process.exit(0);
