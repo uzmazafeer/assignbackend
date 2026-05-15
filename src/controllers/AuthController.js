@@ -1,11 +1,29 @@
 import User from "../models/schema.js";
+import jwt from 'jsonwebtoken';
+
+const generateToken = (userId) => {
+    return jwt.sign({ userId }, process.env.JWT_SECRET || 'your-secret-key-change-in-production', { expiresIn: '7d' });
+};
 
 export const registerUser = async (req, res) => {
     try {
         const { name, email, password, age } = req.body;
+        
+        // Validate input
+        if (!name || !email || !password) {
+            return res.status(400).json({ error: 'Name, email, and password are required' });
+        }
+        
         const user = new User({ name, email, password, age });
         await user.save();
-        res.status(201).json({ message: 'User registered successfully', user: { name, email, age } });
+        
+        const token = generateToken(user._id);
+        
+        res.status(201).json({ 
+            message: 'User registered successfully', 
+            token,
+            user: { _id: user._id, name, email, age } 
+        });
     } catch (error) {
         if (error.code === 11000) {
             res.status(400).json({ error: 'Email already exists' });
@@ -18,6 +36,11 @@ export const registerUser = async (req, res) => {
 export const loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
+        
+        if (!email || !password) {
+            return res.status(400).json({ error: 'Email and password are required' });
+        }
+        
         const user = await User.findOne({ email });
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
@@ -26,7 +49,14 @@ export const loginUser = async (req, res) => {
         if (!isMatch) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
-        res.status(200).json({ message: 'Login successful', user: { name: user.name, email: user.email, age: user.age } });
+        
+        const token = generateToken(user._id);
+        
+        res.status(200).json({ 
+            message: 'Login successful',
+            token,
+            user: { _id: user._id, name: user.name, email: user.email, age: user.age } 
+        });
     } catch (error) {
         res.status(500).json({ error: 'Server error' });
     }
